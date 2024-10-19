@@ -87,16 +87,21 @@ def profile_n_threading(scene_xml: str, threads: int, scenes: int):
 
 
 def base_test():
-    with timer("single step of MJX"):
-        model = mj.MjModel.from_xml_string(ANT_XML)
-        data = mj.MjData(model)
-        mjx_model = mjx.put_model(model)
-        mjx_data = mjx.put_data(model, data)
-        print(f"DEVICE RUNNING: {mjx_data.qpos.device}")
-        print(f"QPOS INITIAL: {mjx_data.qpos}")
-        jit_step = jax.jit(mjx.step)
+    model = mj.MjModel.from_xml_string(ANT_XML)
+    data = mj.MjData(model)
+    mjx_model = mjx.put_model(model)
+    mjx_data = mjx.put_data(model, data)
+    print(f"DEVICE RUNNING: {mjx_data.qpos.device}")
+    print(f"QPOS INITIAL: {mjx_data.qpos}")
+    jit_step = jax.jit(mjx.step)
+
+    with timer("first step of MJX"):
         mjx_data = jit_step(mjx_model, mjx_data)
-        print(f"QPOS (1 STEP): {mjx_data.qpos}")
+        print(f"QPOS (1st STEP): {mjx_data.qpos}")
+
+    with timer("second step of MJX"):
+        mjx_data = jit_step(mjx_model, mjx_data)
+        print(f"QPOS (2nd STEP): {mjx_data.qpos}")
 
 if __name__ == '__main__':
     base_test()
