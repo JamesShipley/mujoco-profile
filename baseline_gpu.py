@@ -103,7 +103,9 @@ def base_test():
         mjx_data = jit_step(mjx_model, mjx_data)
         print(f"QPOS (2nd STEP): {mjx_data.qpos}")
 
+
 if __name__ == '__main__':
-    base_test()
+    make_jit_step()
+    # base_test()
     # profile_single()
     # profile_n_threading(ANT_XML, 100, 100)
