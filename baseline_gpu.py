@@ -9,6 +9,18 @@ from mujoco import mjx
 
 from ant_xml import ANT_XML
 
+BOX_XML = """
+<mujoco>
+  <worldbody>
+    <light name="top" pos="0 0 1"/>
+    <body name="box_and_sphere" euler="0 0 -30">
+      <joint name="swing" type="hinge" axis="1 -1 0" pos="-.2 -.2 -.2"/>
+      <geom name="red_box" type="box" size=".2 .2 .2" rgba="1 0 0 1"/>
+      <geom name="green_sphere" pos=".2 .2 .2" size=".1" rgba="0 1 0 1"/>
+    </body>
+  </worldbody>
+</mujoco>
+"""
 
 @contextlib.contextmanager
 def timer(name: str):
@@ -28,7 +40,7 @@ def make_jit_step(timed=True):
 
     if timed:
         with timer("making model"):
-            model = mj.MjModel.from_xml_string(ANT_XML)
+            model = mj.MjModel.from_xml_string(BOX_XML)
             data = mj.MjData(model)
             mjx_model = mjx.put_model(model)
             mjx_data = mjx.put_data(model, data)
