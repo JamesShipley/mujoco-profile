@@ -43,17 +43,17 @@ def make_jit_step(timed=True):
         with timer("making model"):
             x = defaultdict(dict)
 
-            for name, xml in [["small", BOX_XML], ["LARGE", ANT_XML]]:
+            for name, xml in [["small", BOX_XML], ["large", ANT_XML]]:
                 model = mj.MjModel.from_xml_string(xml)
                 data = mj.MjData(model)
                 x[name]['m'] = mjx.put_model(model)
                 x[name]['d'] = mjx.put_data(model, data)
 
         with timer("running first step"):
-            jit_step(*x['small'].values())
+            jit_step(**x['small'])
 
         with timer("running second step"):
-            jit_step(*x['large'].values())
+            jit_step(**x['large'])
 
         return jit_step
 
