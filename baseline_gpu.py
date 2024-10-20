@@ -32,10 +32,13 @@ def make_jit_step(timed=True):
             mjx_model = mjx.put_model(model)
             mjx_data = mjx.put_data(model, data)
 
-        with timer("running one step"):
+        with timer("running first step"):
             jit_step(mjx_model, mjx_data)
 
-    return jit_step
+        with timer("running second step"):
+            jit_step(mjx_model, mjx_data)
+
+        return jit_step
 
 
 def run_scene_mjx(model: mj.MjModel, n_steps: int, jit_step):
@@ -84,24 +87,6 @@ def profile_n_threading(scene_xml: str, threads: int, scenes: int):
 
     print('results'.center(max(map(len, log)), '='))
     print('\n'.join(log))
-
-
-def base_test():
-    model = mj.MjModel.from_xml_string(ANT_XML)
-    data = mj.MjData(model)
-    mjx_model = mjx.put_model(model)
-    mjx_data = mjx.put_data(model, data)
-    print(f"DEVICE RUNNING: {mjx_data.qpos.device}")
-    print(f"QPOS INITIAL: {mjx_data.qpos}")
-    jit_step = jax.jit(mjx.step)
-
-    with timer("first step of MJX"):
-        mjx_data = jit_step(mjx_model, mjx_data)
-        print(f"QPOS (1st STEP): {mjx_data.qpos}")
-
-    with timer("second step of MJX"):
-        mjx_data = jit_step(mjx_model, mjx_data)
-        print(f"QPOS (2nd STEP): {mjx_data.qpos}")
 
 
 if __name__ == '__main__':
