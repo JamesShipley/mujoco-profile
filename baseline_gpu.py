@@ -50,10 +50,10 @@ def make_jit_step(timed=True):
                 x[name]['d'] = mjx.put_data(model, data)
 
         with timer("running first step"):
-            jit_step(**x['small'])
+            jit_step(*x['small'].values())
 
         with timer("running second step"):
-            jit_step(**x['large'])
+            jit_step(*x['large'].values())
 
         return jit_step
 
