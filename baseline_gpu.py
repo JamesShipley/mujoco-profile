@@ -1,5 +1,6 @@
 import contextlib
 import time
+from collections import defaultdict
 
 from concurrent.futures.thread import ThreadPoolExecutor as TPool
 
@@ -40,16 +41,19 @@ def make_jit_step(timed=True):
 
     if timed:
         with timer("making model"):
-            model = mj.MjModel.from_xml_string(BOX_XML)
-            data = mj.MjData(model)
-            mjx_model = mjx.put_model(model)
-            mjx_data = mjx.put_data(model, data)
+            x = defaultdict(dict)
+
+            for name, xml in [["small", BOX_XML], ["LARGE", ANT_XML]]:
+                model = mj.MjModel.from_xml_string(xml)
+                data = mj.MjData(model)
+                x[name]['m'] = mjx.put_model(model)
+                x[name]['d'] = mjx.put_data(model, data)
 
         with timer("running first step"):
-            jit_step(mjx_model, mjx_data)
+            jit_step(**x['small'])
 
         with timer("running second step"):
-            jit_step(mjx_model, mjx_data)
+            jit_step(**x['large'])
 
         return jit_step
 
