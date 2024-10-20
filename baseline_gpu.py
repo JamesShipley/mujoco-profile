@@ -15,6 +15,7 @@ def timer(name: str):
     t = .0
     try:
         t = time.perf_counter()
+        print(f"running {name} ...")
         yield None
     finally:
         print(f"{name}: {time.perf_counter() - t}")
