@@ -15,10 +15,10 @@ def timer(name: str):
     t = .0
     try:
         t = time.perf_counter()
-        print(f"running {name} ...")
+        print(f"{name} ...")
         yield None
     finally:
-        print(f"{name}: {time.perf_counter() - t}")
+        print(f"'{name}' took {time.perf_counter() - t}")
 
 
 def make_jit_step(timed=True):
