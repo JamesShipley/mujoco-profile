@@ -134,12 +134,34 @@ def _check_jit_time(xml: str):
         step(mjx_model, mjx_data)
 
     print(f"jit step took {t.elapsed}")
+    return t.elapsed
+
+
+def _check_mp_jit_possible():
+    with ProcPool() as pool:
+        pool.map(_check_jit_time, [BODIES[0]] * 10)
+
+
+def check_jit_on_different_size_datas(xml):
+    model = mujoco.MjModel.from_xml_string(xml)
+    data = mujoco.MjData(model)
+    mjx_model = mjx.put_model(model)
+    mjx_data = mjx.put_data(model, data)
+    step = jax.vmap(jax.jit(mjx.step), in_axes=(None, 0))
+
+    for i in 100, 400, 800:
+        with Timer() as t:
+            mjx_datas = jax.vmap(lambda _: mjx_data)([1] * i)
+            step(mjx_model, mjx_datas)
+        print(f"fst step with {i} took {t.elapsed}")
 
 
 if __name__ == '__main__':
     # _check_jax_sin()
     # _gpu_sim_single(100, 100, body_xml=BODIES[0])
-    main_gpu(BODIES[0])
+    _check_mp_jit_possible()
+    check_jit_on_different_size_datas(BODIES[0])
+    # main_gpu(BODIES[0])
 
 
 """
