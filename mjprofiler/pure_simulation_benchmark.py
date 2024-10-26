@@ -149,7 +149,7 @@ def check_jit_on_different_size_datas(xml):
     mjx_data = mjx.put_data(model, data)
     step = jax.vmap(jax.jit(mjx.step), in_axes=(None, 0))
 
-    for i in 100, 100, 100:
+    for i in 100, 400, 800:
         with Timer() as t:
             mjx_datas = jax.vmap(lambda _: mjx_data)(jnp.asarray([1] * i))
             step(mjx_model, mjx_datas)
@@ -160,8 +160,8 @@ if __name__ == '__main__':
     # _check_jax_sin()
     # _gpu_sim_single(100, 100, body_xml=BODIES[0])
     # _check_mp_jit_possible()
-    check_jit_on_different_size_datas(BODIES[0])
-    # main_gpu(BODIES[0])
+    # check_jit_on_different_size_datas(BODIES[0])
+    main_gpu(BODIES[0])
 
 
 """
