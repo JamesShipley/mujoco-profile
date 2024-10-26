@@ -15,8 +15,10 @@ from mjprofiler.bodies import Ant, Humanoid
 POPULATION_SIZE = (100, 200, 400, 800, 1600, 3200)
 N_STEPS = (100, 200, 400, 800, 1600, 3200)
 BODIES = (Ant.make(10, 10, 10), Humanoid.make(10))
-SIN = np.sin(np.arange(0, 2 * np.pi, 0.01))
 N_PROCS = multiprocessing.cpu_count()
+
+SIN = np.sin(np.arange(0, 2 * np.pi, 0.01))
+SIN_JAX = jnp.asarray(SIN)
 
 
 class Timer:
@@ -58,7 +60,7 @@ def _cpu_sim_single(population: int, n_steps: int, body_xml: str, is_mp: bool) -
         return compute_time
 
 
-def main_cpu(body_xml: str, attempts: int):
+def main_cpu(body_xml: str):
     print(f"started {datetime.datetime.now()} with {N_PROCS} processes")
 
     x, y = len(POPULATION_SIZE), len(N_STEPS)
@@ -70,14 +72,13 @@ def main_cpu(body_xml: str, attempts: int):
                     POPULATION_SIZE[i_population],
                     N_STEPS[i_steps],
                     body_xml,
-                    attempts,
                     is_mp=False
                 )
     df = pd.DataFrame({f"{pop=}": results[i] for i, pop in enumerate(POPULATION_SIZE)}, index=list(N_STEPS))
     print(df.to_string())
 
 
-def _gpu_sim_single(population: int, n_steps: int, body_xml: str):
+def _gpu_sim_single(population: int, n_steps: int, body_xml: str, is_ctrl: bool):
 
     print(f"GPU | {population=} | {n_steps=}")
     model = mujoco.MjModel.from_xml_string(body_xml)
@@ -85,11 +86,10 @@ def _gpu_sim_single(population: int, n_steps: int, body_xml: str):
     mjx_model = mjx.put_model(model)
     mjx_data = mjx.put_data(model, data)
     i_population = jnp.arange(population)
-    sin = jnp.asarray(SIN)
 
     mjx_datas = jax.vmap(lambda _: mjx_data)(i_population)
     step = jax.vmap(jax.jit(mjx.step), in_axes=(None, 0))
-    ctrl = jax.vmap(lambda d, i: d.replace(ctrl=sin[i % len(SIN)]))
+    ctrl = jax.vmap(lambda d, i: d.replace(ctrl=SIN_JAX[i % len(SIN)]))
 
     with Timer() as t_fst:
         mjx_datas = step(mjx_model, mjx_datas)
@@ -97,22 +97,49 @@ def _gpu_sim_single(population: int, n_steps: int, body_xml: str):
     with Timer() as t_rest:
         for i_steps in range(n_steps - 1):
             mjx_datas = step(mjx_model, mjx_datas)
-            mjx_datas = ctrl(mjx_datas, i_population)
+            if is_ctrl:
+                mjx_datas = ctrl(mjx_datas, i_steps + i_population)
 
     return t_fst.elapsed, t_rest.elapsed
 
 
-def _check_jax_sin(n=1000):
-    sin = jnp.sin(jnp.arange(0, 6.3, 0.01))
-    irange = jnp.arange(n)
-    ctrl = jax.vmap(lambda i: sin[i % len(sin)])
-    print(ctrl(irange + 1))
+def main_gpu(body_xml: str):
+    print(f"started {datetime.datetime.now()} with {N_PROCS} processes GPU")
+
+    x, y = len(POPULATION_SIZE), len(N_STEPS)
+    results = np.zeros((x, y))
+    jits = np.zeros((x, y))
+
+    for i_p in range(x):
+        for i_s in range(y):
+            jits[i_p, i_s], results[i_p, i_s] = _gpu_sim_single(
+                    POPULATION_SIZE[i_p],
+                    N_STEPS[i_s],
+                    body_xml,
+                )
+
+    for res in jits, results:
+        df = pd.DataFrame({f"{pop=}": res[i] for i, pop in enumerate(POPULATION_SIZE)}, index=list(N_STEPS))
+        print(df.to_string())
+
+
+def _check_jit_time(xml: str):
+    model = mujoco.MjModel.from_xml_string(xml)
+    data = mujoco.MjData(model)
+    mjx_model = mjx.put_model(model)
+    mjx_data = mjx.put_data(model, data)
+    step = jax.jit(mjx.step)
+
+    with Timer() as t:
+        step(mjx_model, mjx_data)
+
+    print(f"jit step took {t.elapsed}")
 
 
 if __name__ == '__main__':
     # _check_jax_sin()
-    _gpu_sim_single(100, 100, body_xml=BODIES[0])
-    # main_cpu(BODIES[0], 1)
+    # _gpu_sim_single(100, 100, body_xml=BODIES[0])
+    main_gpu(BODIES[0])
 
 
 """
