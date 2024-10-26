@@ -88,6 +88,9 @@ def _gpu_sim_single(population: int, n_steps: int, body_xml: str):
     mjx_datas = jax.vmap(lambda _: mjx_data)(i_population)
     jit_step = jax.jit(mjx.step)
 
+    print(mjx_datas)
+    print(mjx_datas.qpos.shape)
+
     with Timer() as t:
         for i_steps in range(n_steps):
             mjx_datas = jit_step(mjx_model, mjx_datas)
