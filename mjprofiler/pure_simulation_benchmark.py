@@ -100,8 +100,16 @@ def _gpu_sim_single(population: int, n_steps: int, body_xml: str):
     return t_fst.elapsed, t_rest.elapsed
 
 
+def _check_jax_sin(n=1000):
+    sin = jnp.sin(jnp.arange(0, 6.3, 0.01))
+    irange = jnp.arange(n)
+    ctrl = jax.vmap(lambda i: sin[i % len(sin)])
+    print(ctrl(irange + 1))
+
+
 if __name__ == '__main__':
-    _gpu_sim_single(100, 100, body_xml=BODIES[0])
+    _check_jax_sin()
+    # _gpu_sim_single(100, 100, body_xml=BODIES[0])
     # main_cpu(BODIES[0], 1)
 
 
