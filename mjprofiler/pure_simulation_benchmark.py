@@ -2,13 +2,14 @@ import datetime
 import multiprocessing
 import time
 from concurrent.futures.process import ProcessPoolExecutor as ProcPool
+
 import mujoco
 import numpy as np
 import pandas as pd
 
 from mjprofiler.bodies import Ant, Humanoid
 
-POPULATION_SIZE = (10, 20, 40, 80, 160, 320)
+POPULATION_SIZE = (100, 200, 400, 800, 1600, 3200)
 N_STEPS = (100, 200, 400, 800, 1600, 3200)
 BODIES = (Ant.make(10, 10, 10), Humanoid.make(10))
 SIN = np.sin(np.arange(0, 2 * np.pi, 0.01))
