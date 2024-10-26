@@ -11,7 +11,7 @@ POPULATION_SIZE = (100, 200, 400, 800, 1600, 3200)
 N_STEPS = (100, 200, 400, 800, 1600, 3200)
 BODIES = (Ant.make(10, 10, 10), Humanoid.make(10))
 SIN = np.sin(np.arange(0, 2 * np.pi, 0.01))
-N_PROCS = 16
+N_PROCS = multiprocessing.cpu_count()
 
 
 def _run(model, n_steps, i_population):
@@ -45,8 +45,7 @@ def _cpu_sim_single(population: int, n_steps: int, body_xml: str, attempts: int)
 
 
 def main_cpu(body_xml: str, attempts: int):
-    _cpu_count = multiprocessing.cpu_count()
-    print(f"started {datetime.datetime.now()} with {_cpu_count} processes")
+    print(f"started {datetime.datetime.now()} with {N_PROCS} processes")
 
     x, y = len(POPULATION_SIZE), len(N_STEPS)
 
