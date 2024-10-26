@@ -93,7 +93,7 @@ def _gpu_sim_single(population: int, n_steps: int, body_xml: str):
 
     with Timer() as t:
         for i_steps in range(n_steps):
-            mjx_datas = jit_step(mjx_model, mjx_datas)
+            mjx_datas = jit_step(mjx_model, mjx_data)
 
     return t.elapsed
 
