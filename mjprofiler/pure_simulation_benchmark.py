@@ -149,7 +149,7 @@ def check_jit_on_different_size_datas(xml):
     mjx_data = mjx.put_data(model, data)
     step = jax.vmap(jax.jit(mjx.step), in_axes=(None, 0))
 
-    for i in 100, 400, 800:
+    for i in 100, 100, 100:
         with Timer() as t:
             mjx_datas = jax.vmap(lambda _: mjx_data)(jnp.asarray([1] * i))
             step(mjx_model, mjx_datas)
