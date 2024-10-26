@@ -59,7 +59,7 @@ def main_cpu(body_xml: str, attempts: int):
                     attempts
                 )
 
-    for i in range(results):
+    for i in range(x):
         print(' '.join(map(str, results[i])))
 
 
