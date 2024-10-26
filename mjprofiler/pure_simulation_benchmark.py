@@ -33,11 +33,8 @@ def _cpu_sim_single(population: int, n_steps: int, body_xml: str, attempts: int)
     with ProcPool(max_workers=N_PROCS) as pool:
         for _ in range(attempts):
             t = time.perf_counter()
-            if n_steps > 200:
-                futures = [pool.submit(_run, model, n_steps, i_population) for i_population in range(population)]
-                t2 = sum([fut.result() for fut in futures])
-            else:
-                t2 = sum(_run(model, n_steps, i_population) for i_population in range(population))
+            futures = [pool.submit(_run, model, n_steps, i_population) for i_population in range(population)]
+            t2 = sum([fut.result() for fut in futures])
             times.append(time.perf_counter() - t)
             print(f'util: {t2 / times[-1]}, n_procs: {N_PROCS} t:{times[-1]}')
 
