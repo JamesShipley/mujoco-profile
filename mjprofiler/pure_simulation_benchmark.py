@@ -79,7 +79,6 @@ def main_cpu(body_xml: str):
 
 
 def _gpu_sim_single(population: int, n_steps: int, body_xml: str, is_ctrl: bool):
-
     print(f"GPU | {population=} | {n_steps=}")
     model = mujoco.MjModel.from_xml_string(body_xml)
     data = mujoco.MjData(model)
@@ -116,6 +115,7 @@ def main_gpu(body_xml: str):
                     POPULATION_SIZE[i_p],
                     N_STEPS[i_s],
                     body_xml,
+                    is_ctrl=False
                 )
 
     for res in jits, results:
