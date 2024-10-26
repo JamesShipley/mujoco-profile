@@ -12,6 +12,7 @@ N_STEPS = (100, 200, 400, 800, 1600, 3200)
 BODIES = (Ant.make(10, 10, 10), Humanoid.make(10))
 SIN = np.sin(np.arange(0, 2 * np.pi, 0.01))
 N_PROCS = multiprocessing.cpu_count()
+RUNTIME = [0]
 
 
 def _run(model, n_steps, i_population):
@@ -37,6 +38,7 @@ def _cpu_sim_single(population: int, n_steps: int, body_xml: str, attempts: int)
             t2 = sum([fut.result() for fut in futures])
             times.append(time.perf_counter() - t)
             print(f'util: {t2 / times[-1]}, n_procs: {N_PROCS} t:{times[-1]}')
+            RUNTIME[0] += t2
 
     return sum(times) / len(times)
 
@@ -58,7 +60,7 @@ def main_cpu(body_xml: str, attempts: int):
                 )
 
     print(results)
-    print(sum(results.reshape(-1)))
+    print(RUNTIME[0])
 
 
 if __name__ == '__main__':
