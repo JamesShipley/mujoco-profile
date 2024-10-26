@@ -33,10 +33,10 @@ def _cpu_sim_single(population: int, n_steps: int, body_xml: str, attempts: int)
     times = []
     with ProcPool(max_workers=N_PROCS) as pool:
         for _ in range(attempts):
-            t = time.perf_counter()
+            # t = time.perf_counter()
             futures = [pool.submit(_run, model, n_steps, i_population) for i_population in range(population)]
             t2 = sum([fut.result() for fut in futures])
-            times.append(time.perf_counter() - t)
+            times.append(t2)
             print(f'util: {t2 / times[-1]}, n_procs: {N_PROCS} t:{times[-1]}')
             RUNTIME[0] += t2
 
