@@ -6,6 +6,9 @@ from concurrent.futures.process import ProcessPoolExecutor as ProcPool
 import mujoco
 import numpy as np
 import pandas as pd
+from mujoco import mjx
+import jax
+import jax.numpy as jnp
 
 from mjprofiler.bodies import Ant, Humanoid
 
@@ -75,9 +78,6 @@ def main_cpu(body_xml: str, attempts: int):
 
 
 def _gpu_sim_single(population: int, n_steps: int, body_xml: str):
-    from mujoco import mjx
-    import jax
-    import jax.numpy as jnp
 
     print(f"GPU | {population=} | {n_steps=}")
     model = mujoco.MjModel.from_xml_string(body_xml)
@@ -88,12 +88,11 @@ def _gpu_sim_single(population: int, n_steps: int, body_xml: str):
     mjx_datas = jax.vmap(lambda _: mjx_data.replace(ctrl=0))(i_population)
     jit_step = jax.jit(mjx.step)
 
-    print(mjx_datas)
     print(mjx_datas.qpos.shape)
 
     with Timer() as t:
         for i_steps in range(n_steps):
-            mjx_datas = jit_step(mjx_model, mjx_datas)
+            mjx_datas = jax.vmap(jit_step, in_axes=(None, 0))(mjx_model, mjx_datas)
 
     return t.elapsed
 
