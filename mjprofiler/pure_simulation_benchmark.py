@@ -95,8 +95,12 @@ def _gpu_sim_single(population: int, n_steps: int, body_xml: str):
     with Timer() as t:
         for i_steps in range(n_steps - 1):
             mjx_datas = step(mjx_model, mjx_datas)
-
     print(f"next {n_steps - 1} steps: {t.elapsed}")
+
+    with Timer() as t2:
+        _ = mjx_datas.qpos
+    print(f"final waiting: {t2.elapsed}")
+
     return t.elapsed
 
 
