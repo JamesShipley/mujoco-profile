@@ -85,7 +85,7 @@ def _gpu_sim_single(population: int, n_steps: int, body_xml: str):
     mjx_model = mjx.put_model(model)
     mjx_data = mjx.put_data(model, data)
     i_population = jnp.arange(population)
-    mjx_datas = jax.vmap(lambda _: mjx_data)(i_population)
+    mjx_datas = jax.vmap(lambda _: mjx_data.replace(ctrl=0))(i_population)
     jit_step = jax.jit(mjx.step)
 
     print(mjx_datas)
