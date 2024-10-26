@@ -9,43 +9,50 @@ import pandas as pd
 
 from mjprofiler.bodies import Ant, Humanoid
 
-POPULATION_SIZE = (100, 200, 400, 800, 1600, 3200)[:3]
+POPULATION_SIZE = (100, 200, 400, 800, 1600, 3200)
 N_STEPS = (100, 200, 400, 800, 1600, 3200)
 BODIES = (Ant.make(10, 10, 10), Humanoid.make(10))
 SIN = np.sin(np.arange(0, 2 * np.pi, 0.01))
 N_PROCS = multiprocessing.cpu_count()
 
 
-def _run(model, n_steps, i_population):
-    _t = time.perf_counter()
+class Timer:
+    start: float = -1
+    elapsed: float = -1
 
-    data = mujoco.MjData(model)
+    def __enter__(self):
+        self.start = time.perf_counter()
+        return self
 
-    for i_step in range(n_steps):
-        mujoco.mj_step(model, data)
-        data.ctrl = SIN[(i_population + i_step) % len(SIN)]
-    return time.perf_counter() - _t
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.elapsed = time.perf_counter() - self.start
 
 
-def _cpu_sim_single(population: int, n_steps: int, body_xml: str, attempts: int, is_mp: bool) -> float:
+def _run(body_xml, n_steps, i_population):
+    with Timer() as t:
+        model = mujoco.MjModel.from_xml_string(body_xml)
+        data = mujoco.MjData(model)
+
+        for i_step in range(n_steps):
+            mujoco.mj_step(model, data)
+            data.ctrl = SIN[(i_population + i_step) % len(SIN)]
+    return t.elapsed
+
+
+def _cpu_sim_single(population: int, n_steps: int, body_xml: str, is_mp: bool) -> float:
     print(f"{population=} | {n_steps=}")
-    model = mujoco.MjModel.from_xml_string(body_xml)
 
-    times = []
     with ProcPool(max_workers=N_PROCS) as pool:
-        for _ in range(attempts):
-            t = time.perf_counter()
+        with Timer() as t:
             if is_mp:
-                futures = [pool.submit(_run, model, n_steps, i_population) for i_population in range(population)]
+                futures = [pool.submit(_run, body_xml, n_steps, i_population) for i_population in range(population)]
                 compute_time = sum([fut.result() for fut in futures])
             else:
-                compute_time = sum(_run(model, n_steps, i_population) for i_population in range(population))
+                compute_time = sum(_run(body_xml, n_steps, i_population) for i_population in range(population))
 
-            times.append(compute_time)
-            total_time = time.perf_counter() - t
-            print(f'total: {total_time}, compute: {compute_time}, util: {compute_time / total_time}')
-
-    return sum(times) / len(times)
+        total_time = t.elapsed
+        print(f'total: {total_time}, compute: {compute_time}, util: {compute_time / total_time}')
+        return compute_time
 
 
 def main_cpu(body_xml: str, attempts: int):
@@ -67,8 +74,31 @@ def main_cpu(body_xml: str, attempts: int):
     print(df.to_string())
 
 
+def _gpu_sim_single(population: int, n_steps: int, body_xml: str):
+    from mujoco import mjx
+    import jax
+    import jax.numpy as jnp
+
+    print(f"GPU | {population=} | {n_steps=}")
+    model = mujoco.MjModel.from_xml_string(body_xml)
+    data = mujoco.MjData(model)
+    mjx_model = mjx.put_model(model)
+    mjx_data = mjx.put_data(model, data)
+    i_population = jnp.arange(population)
+    mjx_datas = jax.vmap(lambda _: mjx_data)(i_population)
+    jit_step = jax.jit(mjx.step)
+
+    with Timer() as t:
+        for i_steps in range(n_steps):
+            mjx_datas = jit_step(mjx_model, mjx_datas)
+
+    return t.elapsed
+
+
 if __name__ == '__main__':
-    main_cpu(BODIES[0], 1)
+    _gpu_sim_single(100, 100, body_xml=BODIES[0])
+    # main_cpu(BODIES[0], 1)
+
 
 """
 ANT_MP:
@@ -80,6 +110,16 @@ ANT_MP:
 800    5.671393  12.298555   21.931903   43.194050   80.859312  158.441200
 1600  11.462277  21.579172   43.121553   86.386477  175.034449  364.565426
 3200  25.002160  50.309147  101.194015  204.353182  412.987588  830.757445
+"""
 
+"""
+ANT_NO_MP:
 
+        pop=100    pop=200    pop=400
+100    0.393213   0.798133   1.558629
+200    0.758073   1.502452   2.960707
+400    1.395267   2.818312   5.630566
+800    2.824851   5.585441  11.207958
+1600   5.917133  11.822327  23.855230
+3200  12.820637  25.751082  51.585355
 """
