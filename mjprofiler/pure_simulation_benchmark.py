@@ -151,8 +151,9 @@ def check_jit_on_different_size_datas(xml):
 
     for i in 100, 400, 800:
         with Timer() as t:
-            mjx_datas = jax.vmap(lambda _: mjx_data)([1] * i)
-            step(mjx_model, mjx_datas)
+            pass
+            # mjx_datas = jax.vmap(lambda _: mjx_data)(jnp.asarray([1] * i))
+            # step(mjx_model, mjx_datas)
         print(f"fst step with {i} took {t.elapsed}")
 
 
