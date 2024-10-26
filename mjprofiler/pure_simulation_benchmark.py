@@ -110,8 +110,8 @@ def _check_jax_sin(n=1000):
 
 
 if __name__ == '__main__':
-    _check_jax_sin()
-    # _gpu_sim_single(100, 100, body_xml=BODIES[0])
+    # _check_jax_sin()
+    _gpu_sim_single(100, 100, body_xml=BODIES[0])
     # main_cpu(BODIES[0], 1)
 
 
