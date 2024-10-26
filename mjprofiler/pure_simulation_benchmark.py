@@ -87,21 +87,17 @@ def _gpu_sim_single(population: int, n_steps: int, body_xml: str):
     i_population = jnp.arange(population)
     mjx_datas = jax.vmap(lambda _: mjx_data)(i_population)
     step = jax.vmap(jax.jit(mjx.step), in_axes=(None, 0))
+    ctrl = jax.vmap(lambda d, i: d.replace(ctrl=SIN[i % len(SIN)]))
 
     with Timer() as t_fst:
         mjx_datas = step(mjx_model, mjx_datas)
-    print(f'first step took: {t_fst.elapsed}')
 
-    with Timer() as t:
+    with Timer() as t_rest:
         for i_steps in range(n_steps - 1):
             mjx_datas = step(mjx_model, mjx_datas)
-    print(f"next {n_steps - 1} steps: {t.elapsed}")
+            mjx_datas = ctrl(mjx_datas, i_population)
 
-    with Timer() as t2:
-        _ = mjx_datas.qpos
-    print(f"final waiting: {t2.elapsed}")
-
-    return t.elapsed
+    return t_fst.elapsed, t_rest.elapsed
 
 
 if __name__ == '__main__':
