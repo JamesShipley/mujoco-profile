@@ -7,7 +7,7 @@ import mujoco
 
 
 _CPU_COUNT = multiprocessing.cpu_count()
-_XML = """
+_XML_ANT = """
     <mujoco model="ant">
       <compiler angle="degree" coordinate="local" inertiafromgeom="true"/>
       <option integrator="RK4"/>
@@ -94,6 +94,19 @@ _XML = """
     </mujoco>
     """
 
+_XML_BALL = """
+<mujoco>
+  <worldbody>
+    <light name="top" pos="0 0 1"/>
+    <body name="box_and_sphere" euler="0 0 -30">
+      <joint name="swing" type="hinge" axis="1 -1 0" pos="-.2 -.2 -.2"/>
+      <geom name="red_box" type="box" size=".2 .2 .2" rgba="1 0 0 1"/>
+      <geom name="green_sphere" pos=".2 .2 .2" size=".1" rgba="0 1 0 1"/>
+    </body>
+  </worldbody>
+</mujoco>
+"""
+
 
 def _cpu_profile_inner(model_xml: str, n_steps: int):
     model = mujoco.MjModel.from_xml_string(model_xml)
@@ -146,7 +159,7 @@ def compare(model_xml: str, n_variants: int, n_steps: int, max_processes: int):
     return time_cpu > time_gpu
 
 
-def main(max_processes: int | None = None):
+def main(xml=_XML_BALL, max_processes: int | None = None):
     if max_processes is None:
         max_processes = _CPU_COUNT
 
@@ -154,13 +167,13 @@ def main(max_processes: int | None = None):
     steps = [1000, 2000, 4000, 8000]
 
     cpus = {
-        (n_variants, n_steps): cpu_profile(_XML, n_variants, n_steps, max_processes)
+        (n_variants, n_steps): cpu_profile(xml, n_variants, n_steps, max_processes)
         for n_variants in variants
         for n_steps in steps
     }
 
     gpus = {
-        (n_variants, n_steps): gpu_profile(_XML, n_variants, n_steps)
+        (n_variants, n_steps): gpu_profile(xml, n_variants, n_steps)
         for n_variants in variants
         for n_steps in steps
     }
