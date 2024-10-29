@@ -369,18 +369,22 @@ def gpu_profile(model_xml: str, n_variants: int, n_steps: int):
     t = time.perf_counter()
 
     for i_steps in range(n_steps - 1):
+        print(f"step {i_steps}")
         mjx_datas = step(mjx_model, mjx_datas)
 
     return time.perf_counter() - t
 
 
 def compare(model_xml: str, n_variants: int, n_steps: int, max_processes: int):
-    time_cpu = cpu_profile(model_xml, n_variants, n_steps, max_processes)
-    time_gpu = gpu_profile(model_xml, n_variants, n_steps)
-    return time_cpu > time_gpu
+    cpu = cpu_profile(model_xml, n_variants, n_steps, max_processes)
+    gpu = gpu_profile(model_xml, n_variants, n_steps)
+    gpu_win = ("worse", "better")[gpu < cpu]
+    faster, slower = (cpu, gpu)[::2 * (gpu > cpu) - 1]
+    percentage = int(100 * (slower / faster - 1))
+    print(f"({n_variants}, {n_steps}): GPU {gpu_win} | {cpu=:.3f} {gpu=:.3f} | {percentage}%")
 
 
-def main(xml=_XML_BALL, max_processes: int | None = None):
+def main(xml=_XML_HUMANOID, max_processes: int | None = None):
     if max_processes is None:
         max_processes = _CPU_COUNT
 
@@ -404,7 +408,6 @@ def main(xml=_XML_BALL, max_processes: int | None = None):
         cpu = cpus[n_variants, n_steps]
         gpu = gpus[n_variants, n_steps]
         gpu_better = ("worse", "better")[gpu < cpu]
-
         faster, slower = (cpu, gpu)[::2 * (gpu > cpu) - 1]
         percentage = int(100 * (slower / faster - 1))
         print(f"({n_variants}, {n_steps}): GPU {gpu_better} | {cpu=:.3f} {gpu=:.3f} | {percentage}%")
@@ -415,4 +418,4 @@ def main(xml=_XML_BALL, max_processes: int | None = None):
 
 
 if __name__ == '__main__':
-    main()
+    compare(_XML_BALL, 4096, 100, _CPU_COUNT)
