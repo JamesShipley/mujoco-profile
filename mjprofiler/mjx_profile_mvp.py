@@ -369,7 +369,6 @@ def gpu_profile(model_xml: str, n_variants: int, n_steps: int):
     t = time.perf_counter()
 
     for i_steps in range(n_steps - 1):
-        print(f"step {i_steps}")
         mjx_datas = step(mjx_model, mjx_datas)
 
     return time.perf_counter() - t
