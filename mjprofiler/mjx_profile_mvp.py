@@ -153,29 +153,31 @@ def main(max_processes: int | None = None):
     variants = [400, 800, 1600]
     steps = [1000, 2000, 4000, 8000]
 
-    cpu_times = {
+    cpus = {
         (n_variants, n_steps): cpu_profile(_XML, n_variants, n_steps, max_processes)
         for n_variants in variants
         for n_steps in steps
     }
 
-    gpu_times = {
-        (n_variants, n_steps): gpu_profile(_XML, n_variants, n_steps) if n_steps < 0 else 10
+    gpus = {
+        (n_variants, n_steps): gpu_profile(_XML, n_variants, n_steps)
         for n_variants in variants
         for n_steps in steps
-
     }
 
-    for n_variants in variants:
-        for n_steps in steps:
-            cpu = cpu_times[n_variants, n_steps]
-            gpu = gpu_times[n_variants, n_steps]
-            gpu_better = ("worse", "better")[gpu < cpu]
+    print("=" * 80)
+    for (n_variants, n_steps) in cpus:
+        cpu = cpus[n_variants, n_steps]
+        gpu = gpus[n_variants, n_steps]
+        gpu_better = ("worse", "better")[gpu < cpu]
 
-            faster, slower = (cpu, gpu)[::2 * (gpu > cpu) - 1]
-            percentage = int(100 * (slower / faster - 1))
-            print(f"({n_variants}, {n_steps}): GPU {gpu_better} | {cpu=:.3f} {gpu=:.3f} | {percentage}%")
+        faster, slower = (cpu, gpu)[::2 * (gpu > cpu) - 1]
+        percentage = int(100 * (slower / faster - 1))
+        print(f"({n_variants}, {n_steps}): GPU {gpu_better} | {cpu=:.3f} {gpu=:.3f} | {percentage}%")
 
+    print("=" * 80)
+    if not any(cpus[k] > gpus[k] for k in cpus):
+        print("GPU is literally never better")
 
 
 if __name__ == '__main__':
