@@ -388,7 +388,7 @@ def main(xml=_XML_HUMANOID, max_processes: int | None = None):
         max_processes = _CPU_COUNT
 
     variants = [4000]
-    steps = [500, 1000]
+    steps = [100, 500, 1000]
 
     cpus = {
         (n_variants, n_steps): cpu_profile(xml, n_variants, n_steps, max_processes)
