@@ -3,9 +3,7 @@ import multiprocessing
 from concurrent.futures.process import ProcessPoolExecutor as ProcPool
 
 import mujoco
-from mujoco import mjx
-import jax
-import jax.numpy as jnp
+
 
 
 _CPU_COUNT = multiprocessing.cpu_count()
@@ -107,6 +105,7 @@ def _cpu_profile_inner(model_xml: str, n_steps: int):
 
 
 def cpu_profile(model_xml: str, n_variants: int, n_steps: int, max_processes: int):
+    print(f"running CPU profile with {n_variants=}, {n_steps=}, {max_processes=} ...")
     assert 0 < max_processes <= _CPU_COUNT
 
     t = time.perf_counter()
@@ -119,6 +118,10 @@ def cpu_profile(model_xml: str, n_variants: int, n_steps: int, max_processes: in
 
 
 def gpu_profile(model_xml: str, n_variants: int, n_steps: int):
+    print(f"running GPU profile with {n_variants=}, {n_steps=} ...")
+    from mujoco import mjx
+    import jax
+    import jax.numpy as jnp
     model = mujoco.MjModel.from_xml_string(model_xml)
     data = mujoco.MjData(model)
     mjx_model = mjx.put_model(model)
@@ -138,34 +141,41 @@ def gpu_profile(model_xml: str, n_variants: int, n_steps: int):
 
 
 def compare(model_xml: str, n_variants: int, n_steps: int, max_processes: int):
-    print(f"running CPU profile with {n_variants=}, {n_steps=}, {max_processes=} ...")
     time_cpu = cpu_profile(model_xml, n_variants, n_steps, max_processes)
-    print(f"finished CPU profile (took {time_cpu:.3f} seconds), running GPU profile ...")
     time_gpu = gpu_profile(model_xml, n_variants, n_steps)
-    print(f"finished both, {time_gpu=}, {time_cpu=}, cpu {['slower','faster'][time_cpu < time_gpu]}")
-    return time_cpu, time_gpu
+    return time_cpu > time_gpu
 
 
 def main(max_processes: int | None = None):
     if max_processes is None:
         max_processes = _CPU_COUNT
 
-    results = {}
-    gpu_better = {}
-    for n_variants in 400, 800, 1600:
-        for n_steps in 200, 400, 800, 1600:
-            time_cpu, time_gpu = compare(_XML, n_variants, n_steps, max_processes)
-            results[n_variants, n_steps] = (time_cpu, time_gpu)
-            gpu_better[n_variants, n_steps] = time_gpu < time_cpu
+    variants = [400, 800, 1600]
+    steps = [1000, 2000, 4000, 8000]
 
-    if not any(gpu_better.values()):
-        print("GPU is not better for any of following cases")
-        return
+    cpu_times = {
+        (n_variants, n_steps): cpu_profile(_XML, n_variants, n_steps, max_processes)
+        for n_variants in variants
+        for n_steps in steps
+    }
 
-    for (n_variants, n_steps), res in gpu_better.items():
-        if res:
-            time_cpu, time_gpu = results[n_variants, n_steps]
-            print(f"GPU better for {n_variants=}, {n_steps=}. {time_cpu=:.3f}, {time_gpu=:.3f}")
+    gpu_times = {
+        (n_variants, n_steps): gpu_profile(_XML, n_variants, n_steps) if n_steps < 0 else 10
+        for n_variants in variants
+        for n_steps in steps
+
+    }
+
+    for n_variants in variants:
+        for n_steps in steps:
+            cpu = cpu_times[n_variants, n_steps]
+            gpu = gpu_times[n_variants, n_steps]
+            gpu_better = ("worse", "better")[gpu < cpu]
+
+            faster, slower = (cpu, gpu)[::2 * (gpu > cpu) - 1]
+            percentage = int(100 * (slower / faster - 1))
+            print(f"({n_variants}, {n_steps}): GPU {gpu_better} | {cpu=:.3f} {gpu=:.3f} | {percentage}%")
+
 
 
 if __name__ == '__main__':
