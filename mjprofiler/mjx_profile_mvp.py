@@ -417,4 +417,4 @@ def main(xml=_XML_HUMANOID, max_processes: int | None = None):
 
 
 if __name__ == '__main__':
-    main(_XML_BALL)
+    main(_XML_HUMANOID)
