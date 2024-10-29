@@ -123,10 +123,11 @@ def gpu_profile(model_xml: str, n_variants: int, n_steps: int):
     data = mujoco.MjData(model)
     mjx_model = mjx.put_model(model)
     mjx_data = mjx.put_data(model, data)
-    mjx_datas = jax.vmap(lambda _: mjx_data)(jnp.arange(n_variants))
+    mjx_datas = jax.vmap(lambda _: mjx_data.replace(ctrl=1))(jnp.arange(n_variants))
     step = jax.vmap(jax.jit(mjx.step), in_axes=(None, 0))
 
-    # do not even time first step, takes too long, as long as step 2...N is faster we have viable option
+    # do not even time first step, takes too long, as long as step 2...N is faster we have viable option for GPU
+    # because first step is fixed cost
     mjx_datas = step(mjx_model, mjx_datas)
     t = time.perf_counter()
 
