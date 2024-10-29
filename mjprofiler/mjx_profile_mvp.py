@@ -387,7 +387,7 @@ def main(xml=_XML_HUMANOID, max_processes: int | None = None):
     if max_processes is None:
         max_processes = _CPU_COUNT
 
-    variants = [4000]
+    variants = [100, 1000, 4000]
     steps = [100, 500, 1000]
 
     cpus = {
@@ -409,7 +409,7 @@ def main(xml=_XML_HUMANOID, max_processes: int | None = None):
         gpu_better = ("worse", "better")[gpu < cpu]
         faster, slower = (cpu, gpu)[::2 * (gpu > cpu) - 1]
         percentage = int(100 * (slower / faster - 1))
-        print(f"({n_variants}, {n_steps}): GPU {gpu_better} | {cpu=:.3f} {gpu=:.3f} | {percentage}%")
+        print(f"{n_variants=} {n_steps=} | GPU {gpu_better} | {cpu=:.3f} {gpu=:.3f} | {percentage}%")
 
     print("=" * 80)
     if not any(cpus[k] > gpus[k] for k in cpus):
