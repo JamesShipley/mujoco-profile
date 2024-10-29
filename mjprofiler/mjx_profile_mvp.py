@@ -388,8 +388,8 @@ def main(xml=_XML_HUMANOID, max_processes: int | None = None):
     if max_processes is None:
         max_processes = _CPU_COUNT
 
-    variants = [400, 800, 1600]
-    steps = [1000, 2000, 4000, 8000]
+    variants = [4000]
+    steps = [500, 1000]
 
     cpus = {
         (n_variants, n_steps): cpu_profile(xml, n_variants, n_steps, max_processes)
@@ -418,4 +418,4 @@ def main(xml=_XML_HUMANOID, max_processes: int | None = None):
 
 
 if __name__ == '__main__':
-    compare(_XML_BALL, 4096, 100, _CPU_COUNT)
+    main(_XML_BALL)
